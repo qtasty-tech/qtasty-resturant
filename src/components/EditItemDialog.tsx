@@ -5,6 +5,16 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 
+interface MenuItem{
+  _id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  image: string;
+  available: boolean;
+}
+
 interface EditItemDialogProps {
   isOpen: boolean;
   onClose: () => void;

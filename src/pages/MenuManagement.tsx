@@ -1,16 +1,25 @@
-import { useState } from 'react';
+// src/pages/MenuManagement.tsx
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { useToast } from '@/components/ui/use-toast';
+import { 
+  getMenu, 
+  createMenuItem, 
+  updateMenuItem, 
+  deleteMenuItem, 
+  toggleMenuItemAvailability 
+} from '@/api/menuApi';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Edit, Trash2 } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
 import AddItemDialog from '@/components/AddItemDialog';
 import EditItemDialog from '@/components/EditItemDialog';
 
 interface MenuItem {
-  id: string;
+  _id: string;
   name: string;
   description: string;
   price: number;
@@ -19,65 +28,18 @@ interface MenuItem {
   available: boolean;
 }
 
-// Mock data
-const initialMenuItems: MenuItem[] = [
-  {
-    id: '1',
-    name: 'Classic Cheeseburger',
-    description: 'Beef patty with cheese, lettuce, tomato, and special sauce',
-    price: 12.99,
-    category: 'Mains',
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
-    available: true,
-  },
-  {
-    id: '2',
-    name: 'Chicken Caesar Salad',
-    description: 'Romaine lettuce, grilled chicken, parmesan, croutons with Caesar dressing',
-    price: 10.99,
-    category: 'Salads',
-    image: 'https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
-    available: true,
-  },
-  {
-    id: '3',
-    name: 'Margherita Pizza',
-    description: 'Fresh mozzarella, tomatoes, and basil on thin crust',
-    price: 14.99,
-    category: 'Mains',
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
-    available: true,
-  },
-  {
-    id: '4',
-    name: 'Chocolate Brownie',
-    description: 'Warm chocolate brownie with vanilla ice cream',
-    price: 6.99,
-    category: 'Desserts',
-    image: 'https://images.unsplash.com/photo-1564355808539-22fda35bed7e?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
-    available: true,
-  },
-  {
-    id: '5',
-    name: 'French Fries',
-    description: 'Crispy golden fries with ketchup and mayonnaise',
-    price: 4.99,
-    category: 'Sides',
-    image: 'https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
-    available: true,
-  }
-];
-
 const categories = ['All', 'Mains', 'Sides', 'Salads', 'Desserts', 'Drinks'];
 
 const MenuManagement = () => {
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
+  const { id: restaurantId } = useParams();
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  const [newItem, setNewItem] = useState<Omit<MenuItem, 'id'>>({
+  const [newItem, setNewItem] = useState<Omit<MenuItem, '_id'>>({
     name: '',
     description: '',
     price: 0,
@@ -85,6 +47,25 @@ const MenuManagement = () => {
     image: '',
     available: true,
   });
+
+  useEffect(() => {
+    const fetchMenu = async () => {
+      try {
+        const data = await getMenu(restaurantId!);
+        setMenuItems(data);
+        setIsLoading(false);
+      } catch (error) {
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch menu items',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+      }
+    };
+
+    fetchMenu();
+  }, [restaurantId, toast]);
 
   const filteredItems = selectedCategory === 'All' 
     ? menuItems 
@@ -105,65 +86,98 @@ const MenuManagement = () => {
     }
   };
 
-  const handleAvailabilityChange = (checked: boolean) => {
-    if (selectedItem) {
-      setSelectedItem({
-        ...selectedItem,
-        available: checked,
-      });
-    } else {
-      setNewItem({
-        ...newItem,
-        available: checked,
+  const handleAvailabilityChange = async (checked: boolean, itemId: string) => {
+    try {
+      const updatedItem = await toggleMenuItemAvailability(restaurantId!, itemId, checked);
+      setMenuItems(menuItems.map(item => 
+        item._id === itemId ? updatedItem : item
+      ));
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update item availability',
+        variant: 'destructive',
       });
     }
   };
 
-  const handleAddItem = () => {
-    const newId = Date.now().toString();
-    const itemToAdd = { id: newId, ...newItem };
-    setMenuItems([...menuItems, itemToAdd]);
-    setNewItem({
-      name: '',
-      description: '',
-      price: 0,
-      category: 'Mains',
-      image: '',
-      available: true,
-    });
-    setIsAddDialogOpen(false);
-    toast({
-      title: 'Menu Item Added',
-      description: `${newItem.name} has been added to your menu.`,
-    });
+  const handleAddItem = async () => {
+    try {
+      const createdItem = await createMenuItem(restaurantId!, newItem);
+      setMenuItems([...menuItems, createdItem]);
+      setNewItem({
+        name: '',
+        description: '',
+        price: 0,
+        category: 'Mains',
+        image: '',
+        available: true,
+      });
+      setIsAddDialogOpen(false);
+      toast({
+        title: 'Success',
+        description: `${newItem.name} has been added to your menu.`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to add menu item',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const handleUpdateItem = () => {
-    if (selectedItem) {
+  const handleUpdateItem = async () => {
+    if (!selectedItem) return;
+    
+    try {
+      const updatedItem = await updateMenuItem(
+        restaurantId!, 
+        selectedItem._id, 
+        selectedItem
+      );
       setMenuItems(menuItems.map(item => 
-        item.id === selectedItem.id ? selectedItem : item
+        item._id === selectedItem._id ? updatedItem : item
       ));
       setSelectedItem(null);
       toast({
-        title: 'Menu Item Updated',
+        title: 'Success',
         description: `${selectedItem.name} has been updated.`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update menu item',
+        variant: 'destructive',
       });
     }
   };
 
-  const handleDeleteItem = (id: string) => {
-    const itemToDelete = menuItems.find(item => item.id === id);
-    setMenuItems(menuItems.filter(item => item.id !== id));
-    toast({
-      title: 'Menu Item Removed',
-      description: `${itemToDelete?.name} has been removed from your menu.`,
-      variant: 'destructive',
-    });
+  const handleDeleteItem = async (itemId: string) => {
+    try {
+      const itemToDelete = menuItems.find(item => item._id === itemId);
+      await deleteMenuItem(restaurantId!, itemId);
+      setMenuItems(menuItems.filter(item => item._id !== itemId));
+      toast({
+        title: 'Success',
+        description: `${itemToDelete?.name} has been removed from your menu.`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete menu item',
+        variant: 'destructive',
+      });
+    }
   };
 
   const openEditDialog = (item: MenuItem) => {
     setSelectedItem({...item});
   };
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-64">Loading menu...</div>;
+  }
 
   return (
     <div className="animate-fade-in">
@@ -192,7 +206,7 @@ const MenuManagement = () => {
         <TabsContent value={selectedCategory} className="mt-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredItems.map((item) => (
-              <Card key={item.id} className={`overflow-hidden ${!item.available ? 'opacity-70' : ''}`}>
+              <Card key={item._id} className={`overflow-hidden ${!item.available ? 'opacity-70' : ''}`}>
                 <div className="relative h-48 w-full">
                   <img 
                     src={item.image || '/placeholder.svg'} 
@@ -212,7 +226,7 @@ const MenuManagement = () => {
                       size="icon" 
                       variant="secondary" 
                       className="h-8 w-8 bg-accent hover:bg-accent/90"
-                      onClick={() => handleDeleteItem(item.id)}
+                      onClick={() => handleDeleteItem(item._id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -235,12 +249,7 @@ const MenuManagement = () => {
                     <div className="flex items-center">
                       <Switch 
                         checked={item.available} 
-                        onCheckedChange={(checked) => {
-                          const updatedItems = menuItems.map(i => 
-                            i.id === item.id ? {...i, available: checked} : i
-                          );
-                          setMenuItems(updatedItems);
-                        }}
+                        onCheckedChange={(checked) => handleAvailabilityChange(checked, item._id)}
                       />
                     </div>
                   </div>
@@ -268,7 +277,7 @@ const MenuManagement = () => {
         newItem={newItem}
         categories={categories}
         onInputChange={handleInputChange}
-        onAvailabilityChange={handleAvailabilityChange}
+        onAvailabilityChange={(checked) => setNewItem({...newItem, available: checked})}
         onAddItem={handleAddItem}
       />
 
@@ -278,7 +287,7 @@ const MenuManagement = () => {
         selectedItem={selectedItem}
         categories={categories}
         onInputChange={handleInputChange}
-        onAvailabilityChange={handleAvailabilityChange}
+        onAvailabilityChange={(checked) => selectedItem && setSelectedItem({...selectedItem, available: checked})}
         onUpdateItem={handleUpdateItem}
       />
     </div>

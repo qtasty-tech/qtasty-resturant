@@ -7,7 +7,7 @@ const ProtectedRoute = () => {
   if (loading) {
     return <div>Loading...</div>; // You can replace this with a nice spinner later
   }
-  return user ? <Outlet /> : <Navigate to="/auth/signin" />;
+  return user ? <Outlet /> : <Navigate to="/" />;
 };
 
 export default ProtectedRoute;
