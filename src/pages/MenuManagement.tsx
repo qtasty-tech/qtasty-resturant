@@ -1,16 +1,13 @@
-
 import { useState } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import AddItemDialog from '@/components/AddItemDialog';
+import EditItemDialog from '@/components/EditItemDialog';
 
 interface MenuItem {
   id: string;
@@ -265,190 +262,25 @@ const MenuManagement = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Add New Item Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Add New Menu Item</DialogTitle>
-            <DialogDescription>
-              Add details about your new menu item below.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Item Name</Label>
-              <Input
-                id="name"
-                name="name"
-                value={newItem.name}
-                onChange={handleInputChange}
-                placeholder="e.g. Classic Cheeseburger"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={newItem.description}
-                onChange={handleInputChange}
-                placeholder="Describe your menu item..."
-                rows={3}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="price">Price ($)</Label>
-                <Input
-                  id="price"
-                  name="price"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={newItem.price}
-                  onChange={handleInputChange}
-                  placeholder="0.00"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="category">Category</Label>
-                <select
-                  id="category"
-                  name="category"
-                  value={newItem.category}
-                  onChange={handleInputChange}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {categories.filter(c => c !== 'All').map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="image">Image URL</Label>
-              <Input
-                id="image"
-                name="image"
-                value={newItem.image}
-                onChange={handleInputChange}
-                placeholder="https://example.com/image.jpg"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch
-                id="available"
-                checked={newItem.available}
-                onCheckedChange={handleAvailabilityChange}
-              />
-              <Label htmlFor="available">Available</Label>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddItem}>Add to Menu</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AddItemDialog
+        isOpen={isAddDialogOpen}
+        onClose={() => setIsAddDialogOpen(false)}
+        newItem={newItem}
+        categories={categories}
+        onInputChange={handleInputChange}
+        onAvailabilityChange={handleAvailabilityChange}
+        onAddItem={handleAddItem}
+      />
 
-      {/* Edit Item Dialog */}
-      <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Edit Menu Item</DialogTitle>
-            <DialogDescription>
-              Update the details of your menu item.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedItem && (
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="edit-name">Item Name</Label>
-                <Input
-                  id="edit-name"
-                  name="name"
-                  value={selectedItem.name}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-description">Description</Label>
-                <Textarea
-                  id="edit-description"
-                  name="description"
-                  value={selectedItem.description}
-                  onChange={handleInputChange}
-                  rows={3}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="edit-price">Price ($)</Label>
-                  <Input
-                    id="edit-price"
-                    name="price"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={selectedItem.price}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="edit-category">Category</Label>
-                  <select
-                    id="edit-category"
-                    name="category"
-                    value={selectedItem.category}
-                    onChange={handleInputChange}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {categories.filter(c => c !== 'All').map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-image">Image URL</Label>
-                <Input
-                  id="edit-image"
-                  name="image"
-                  value={selectedItem.image}
-                  onChange={handleInputChange}
-                />
-                <div className="h-32 mt-2 rounded overflow-hidden">
-                  <img 
-                    src={selectedItem.image || '/placeholder.svg'} 
-                    alt={selectedItem.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch
-                  id="edit-available"
-                  checked={selectedItem.available}
-                  onCheckedChange={handleAvailabilityChange}
-                />
-                <Label htmlFor="edit-available">Available</Label>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSelectedItem(null)}>
-              Cancel
-            </Button>
-            <Button onClick={handleUpdateItem}>Update Item</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <EditItemDialog
+        isOpen={!!selectedItem}
+        onClose={() => setSelectedItem(null)}
+        selectedItem={selectedItem}
+        categories={categories}
+        onInputChange={handleInputChange}
+        onAvailabilityChange={handleAvailabilityChange}
+        onUpdateItem={handleUpdateItem}
+      />
     </div>
   );
 };

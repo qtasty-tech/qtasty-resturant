@@ -1,11 +1,12 @@
 // src/pages/VerificationPending.jsx
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate,useLocation } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 const VerificationPending = () => {
   const navigate = useNavigate();
-
+  const location = useLocation();
+  const restaurant = location.state?.restaurant;
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md space-y-6">
@@ -17,11 +18,10 @@ const VerificationPending = () => {
         </div>
         
         <Card>
-          <CardHeader>
-            <CardTitle className="text-center">Verification Pending</CardTitle>
-            <CardDescription className="text-center">
-              Thank you for applying to join Q-Tasty
-            </CardDescription>
+        <CardHeader>
+            <CardTitle className="text-center">
+              Verification Pending {restaurant?.name && `for ${restaurant.name}`}
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-center py-6">
             <div className="mb-6 w-20 h-20 mx-auto rounded-full bg-secondary/20 flex items-center justify-center">
@@ -44,10 +44,19 @@ const VerificationPending = () => {
               Our team is reviewing your restaurant details. This typically takes 1-2 business days.
               We'll notify you by email once your account is approved.
             </p>
+            {restaurant?.location && (
+              <p className="text-muted-foreground mb-2">
+                Location: {restaurant.location}
+              </p>
+            )}
           </CardContent>
           <CardFooter className="flex flex-col gap-2">
-            <Button variant="outline" className="w-full" onClick={() => navigate('/auth/signin')}>
-              Return to Sign In
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => navigate('/myrestaurants')}
+            >
+              Back to My Restaurants
             </Button>
           </CardFooter>
         </Card>

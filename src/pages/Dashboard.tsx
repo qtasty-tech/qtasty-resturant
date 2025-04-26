@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Check, X, Package, TrendingUp, Bell } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 
 const Dashboard = () => {
+  const { id } = useParams<{ id: string }>();
   const [todayOrders, setTodayOrders] = useState(0);
   const [pendingOrders, setPendingOrders] = useState(0);
   const [todaySales, setTodaySales] = useState(0);

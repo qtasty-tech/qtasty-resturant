@@ -26,8 +26,10 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useParams } from 'react-router-dom';
 
 const Sidebar = () => {
+  const { id } = useParams();
   const isMobile = useIsMobile();
   const [restaurantName, setRestaurantName] = useState('Restaurant Name');
 
@@ -58,17 +60,15 @@ const Sidebar = () => {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink to="/" className={({ isActive }) => 
-                      isActive ? "text-primary w-full" : "w-full"
-                    }>
-                      <Home className="w-5 h-5" />
-                      <span>Dashboard</span>
-                    </NavLink>
+                  <NavLink to={`/${id}`} className={({ isActive }) => isActive ? "text-primary w-full" : "w-full"}>
+                    <Home className="w-5 h-5" />
+                    <span>Dashboard</span>
+                  </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink to="/menu" className={({ isActive }) => 
+                    <NavLink to={`/${id}/menu`} className={({ isActive }) => 
                       isActive ? "text-primary w-full" : "w-full"
                     }>
                       <MenuIcon className="w-5 h-5" />
@@ -78,7 +78,7 @@ const Sidebar = () => {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink to="/orders" className={({ isActive }) => 
+                    <NavLink to={`/${id}/orders`} className={({ isActive }) => 
                       isActive ? "text-primary w-full" : "w-full"
                     }>
                       <Package className="w-5 h-5" />
@@ -88,7 +88,7 @@ const Sidebar = () => {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink to="/analytics" className={({ isActive }) => 
+                    <NavLink to={`/${id}/analytics`} className={({ isActive }) => 
                       isActive ? "text-primary w-full" : "w-full"
                     }>
                       <ChartBar className="w-5 h-5" />
@@ -98,7 +98,7 @@ const Sidebar = () => {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink to="/marketing" className={({ isActive }) => 
+                    <NavLink to={`/${id}/marketing`} className={({ isActive }) => 
                       isActive ? "text-primary w-full" : "w-full"
                     }>
                       <Bell className="w-5 h-5" />
@@ -108,7 +108,7 @@ const Sidebar = () => {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink to="/finances" className={({ isActive }) => 
+                    <NavLink to={`/${id}/finances`} className={({ isActive }) => 
                       isActive ? "text-primary w-full" : "w-full"
                     }>
                       <CreditCard className="w-5 h-5" />
@@ -125,7 +125,7 @@ const Sidebar = () => {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink to="/settings" className={({ isActive }) => 
+                    <NavLink to={`/${id}/settings`} className={({ isActive }) => 
                       isActive ? "text-primary w-full" : "w-full"
                     }>
                       <Settings className="w-5 h-5" />

@@ -17,11 +17,14 @@ import Finances from "./pages/Finances";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import MyRestaurants from "./pages/MyRestaurants";
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <AuthProvider>
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -32,23 +35,25 @@ const App = () => (
              <Route path="/auth/signup" element={<Register />} />  
           <Route path="/auth/verification-pending" element={<VerificationPending />} />
           
-          {/* Protected Routes */}
-          <Route path="/" element={<MainLayout><Dashboard /></MainLayout>} />
-          <Route path="/menu" element={<MainLayout><MenuManagement /></MainLayout>} />
-          <Route path="/orders" element={<MainLayout><OrderManagement /></MainLayout>} />
-          <Route path="/analytics" element={<MainLayout><Analytics /></MainLayout>} />
-          <Route path="/marketing" element={<MainLayout><Marketing /></MainLayout>} />
-          <Route path="/finances" element={<MainLayout><Finances /></MainLayout>} />
-          <Route path="/settings" element={<MainLayout><Settings /></MainLayout>} />
-          <Route path="/myrestaurants" element={<MyRestaurants />} />
-          {/* Redirect to Dashboard for empty routes */}
-          <Route path="/index" element={<Navigate to="/" replace />} />
-          
+          <Route element={<ProtectedRoute />}>
+            {/* Protected Routes */}
+            <Route path="/:id" element={<MainLayout><Dashboard /></MainLayout>} />
+            <Route path="/:id/menu" element={<MainLayout><MenuManagement /></MainLayout>} />
+            <Route path="/:id/orders" element={<MainLayout><OrderManagement /></MainLayout>} />
+            <Route path="/:id/analytics" element={<MainLayout><Analytics /></MainLayout>} />
+            <Route path="/:id/marketing" element={<MainLayout><Marketing /></MainLayout>} />
+            <Route path="/:id/finances" element={<MainLayout><Finances /></MainLayout>} />
+            <Route path="/:id/settings" element={<MainLayout><Settings /></MainLayout>} />
+            <Route path="/myrestaurants" element={<MyRestaurants />} />
+            {/* Redirect to Dashboard for empty routes */}
+            <Route path="/index" element={<Navigate to="/" replace />} />
+          </Route>
           {/* 404 Route */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

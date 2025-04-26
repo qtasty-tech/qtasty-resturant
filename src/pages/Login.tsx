@@ -2,6 +2,7 @@ import { useState, ChangeEvent, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import apiConfig from "../utils/apiConfig";
+import { useAuth } from "../context/AuthContext";
 
 interface User {
   _id: string;
@@ -15,6 +16,7 @@ interface LoginResponse {
 }
 
 const Login = () => {
+  const { login } = useAuth();
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [error, setError] = useState<string>("");
@@ -25,7 +27,7 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await axios.post<LoginResponse>(apiConfig.restaurantLogin, {
+      const response = await axios.post<LoginResponse>(apiConfig.login, {
         email,
         password,
       });
@@ -35,8 +37,8 @@ const Login = () => {
         setIsLoading(false);
         return;
       }
-      localStorage.setItem("restaurantUser", JSON.stringify({ ...user, token }));
-      navigate("/myrestaurants");
+      login({ ...user, token }); // Use context login instead of localStorage
+      navigate('/myrestaurants');
     } catch (err: any) {
       setError(err.response?.data?.message || "Login failed. Please check your credentials.");
       setIsLoading(false);

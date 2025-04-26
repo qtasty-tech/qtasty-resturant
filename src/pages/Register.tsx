@@ -24,7 +24,7 @@ const Register = () => {
     setIsLoading(true);
     try {
       const response = await axios.post<RegisterResponse>(
-        apiConfig.restaurantRegister,
+        apiConfig.register,
         {
           name,
           email,
@@ -35,7 +35,7 @@ const Register = () => {
       );
       setIsLoading(false);
       alert("Registration successful! Please log in.");
-      navigate("/login");
+      navigate("/auth/signin");
     } catch (err: any) {
       setIsLoading(false);
       setError(err.response?.data?.message || "Registration failed.");
