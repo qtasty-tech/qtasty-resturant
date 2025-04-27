@@ -1,11 +1,19 @@
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
+// src/components/EditItemDialog.tsx
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 
-interface MenuItem{
+interface MenuItem {
   _id: string;
   name: string;
   description: string;
@@ -13,6 +21,8 @@ interface MenuItem{
   category: string;
   image: string;
   available: boolean;
+  popular: boolean;
+  calories: string;
 }
 
 interface EditItemDialogProps {
@@ -20,8 +30,13 @@ interface EditItemDialogProps {
   onClose: () => void;
   selectedItem: MenuItem | null;
   categories: string[];
-  onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
+  onInputChange: (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => void;
   onAvailabilityChange: (checked: boolean) => void;
+  onPopularChange: (checked: boolean) => void;
   onUpdateItem: () => void;
 }
 
@@ -32,6 +47,7 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
   categories,
   onInputChange,
   onAvailabilityChange,
+  onPopularChange,
   onUpdateItem,
 }) => {
   if (!selectedItem) return null;
@@ -65,7 +81,7 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
               rows={3}
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="edit-price">Price ($)</Label>
               <Input
@@ -79,6 +95,15 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
               />
             </div>
             <div className="grid gap-2">
+              <Label htmlFor="edit-calories">Calories</Label>
+              <Input
+                id="edit-calories"
+                name="calories"
+                value={selectedItem.calories}
+                onChange={onInputChange}
+              />
+            </div>
+            <div className="grid gap-2">
               <Label htmlFor="edit-category">Category</Label>
               <select
                 id="edit-category"
@@ -87,7 +112,7 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
                 onChange={onInputChange}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {categories.filter(c => c !== 'All').map((category) => (
+                {categories.map((category) => (
                   <option key={category} value={category}>
                     {category}
                   </option>
@@ -104,20 +129,31 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
               onChange={onInputChange}
             />
             <div className="h-32 mt-2 rounded overflow-hidden">
-              <img 
-                src={selectedItem.image || '/placeholder.svg'} 
+              <img
+                src={selectedItem.image || "/placeholder.svg"}
                 alt={selectedItem.name}
                 className="w-full h-full object-cover"
               />
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Switch
-              id="edit-available"
-              checked={selectedItem.available}
-              onCheckedChange={onAvailabilityChange}
-            />
-            <Label htmlFor="edit-available">Available</Label>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="edit-popular"
+                checked={selectedItem.popular}
+                onCheckedChange={onPopularChange}
+                className="data-[state=checked]:bg-yellow-500"
+              />
+              <Label htmlFor="edit-popular">Popular</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="edit-available"
+                checked={selectedItem.available}
+                onCheckedChange={onAvailabilityChange}
+              />
+              <Label htmlFor="edit-available">Available</Label>
+            </div>
           </div>
         </div>
         <DialogFooter>

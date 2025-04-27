@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Star } from 'lucide-react';
 import AddItemDialog from '@/components/AddItemDialog';
 import EditItemDialog from '@/components/EditItemDialog';
 
@@ -26,13 +26,19 @@ interface MenuItem {
   category: string;
   image: string;
   available: boolean;
+  popular: boolean;
+  calories: string;
 }
 
-const categories = ['All', 'Mains', 'Sides', 'Salads', 'Desserts', 'Drinks'];
+interface MenuCategory {
+  id: number;
+  name: string;
+  items: MenuItem[];
+}
 
 const MenuManagement = () => {
   const { id: restaurantId } = useParams();
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
@@ -43,16 +49,18 @@ const MenuManagement = () => {
     name: '',
     description: '',
     price: 0,
-    category: 'Mains',
+    category: categories.length > 0 ? categories[0].name : '',
     image: '',
     available: true,
+    popular: false,
+    calories: '',
   });
 
   useEffect(() => {
     const fetchMenu = async () => {
       try {
         const data = await getMenu(restaurantId!);
-        setMenuItems(data);
+        setCategories(data.categories);
         setIsLoading(false);
       } catch (error) {
         toast({
@@ -67,9 +75,12 @@ const MenuManagement = () => {
     fetchMenu();
   }, [restaurantId, toast]);
 
+  const allItems = categories.flatMap(category => category.items);
   const filteredItems = selectedCategory === 'All' 
-    ? menuItems 
-    : menuItems.filter(item => item.category === selectedCategory);
+    ? allItems 
+    : allItems.filter(item => item.category === selectedCategory);
+
+  const availableCategories = ['All', ...categories.map(c => c.name)];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -88,10 +99,13 @@ const MenuManagement = () => {
 
   const handleAvailabilityChange = async (checked: boolean, itemId: string) => {
     try {
-      const updatedItem = await toggleMenuItemAvailability(restaurantId!, itemId, checked);
-      setMenuItems(menuItems.map(item => 
-        item._id === itemId ? updatedItem : item
-      ));
+      const updatedItem = await updateMenuItem(restaurantId!, itemId, { available: checked });
+      setCategories(categories.map(category => ({
+        ...category,
+        items: category.items.map(item => 
+          item._id === itemId ? updatedItem : item
+        )
+      })));
     } catch (error) {
       toast({
         title: 'Error',
@@ -101,17 +115,60 @@ const MenuManagement = () => {
     }
   };
 
+  const handlePopularChange = async (checked: boolean, itemId: string) => {
+    try {
+      const updatedItem = await updateMenuItem(restaurantId!, itemId, { popular: checked });
+      setCategories(categories.map(category => ({
+        ...category,
+        items: category.items.map(item => 
+          item._id === itemId ? updatedItem : item
+        )
+      })));
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update item popularity',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  //add menu item
   const handleAddItem = async () => {
     try {
       const createdItem = await createMenuItem(restaurantId!, newItem);
-      setMenuItems([...menuItems, createdItem]);
+      
+      // Find or create the category
+      let categoryExists = false;
+      const updatedCategories = categories.map(category => {
+        if (category.name === newItem.category) {
+          categoryExists = true;
+          return {
+            ...category,
+            items: [...category.items, createdItem]
+          };
+        }
+        return category;
+      });
+
+      if (!categoryExists) {
+        updatedCategories.push({
+          id: categories.length + 1,
+          name: newItem.category,
+          items: [createdItem]
+        });
+      }
+
+      setCategories(updatedCategories);
       setNewItem({
         name: '',
         description: '',
         price: 0,
-        category: 'Mains',
+        category: categories.length > 0 ? categories[0].name : '',
         image: '',
         available: true,
+        popular: false,
+        calories: '',
       });
       setIsAddDialogOpen(false);
       toast({
@@ -136,9 +193,15 @@ const MenuManagement = () => {
         selectedItem._id, 
         selectedItem
       );
-      setMenuItems(menuItems.map(item => 
-        item._id === selectedItem._id ? updatedItem : item
-      ));
+      
+      // Handle category change if needed
+      setCategories(categories.map(category => ({
+        ...category,
+        items: category.items.map(item => 
+          item._id === selectedItem._id ? updatedItem : item
+        )
+      })));
+      
       setSelectedItem(null);
       toast({
         title: 'Success',
@@ -155,9 +218,14 @@ const MenuManagement = () => {
 
   const handleDeleteItem = async (itemId: string) => {
     try {
-      const itemToDelete = menuItems.find(item => item._id === itemId);
+      const itemToDelete = allItems.find(item => item._id === itemId);
       await deleteMenuItem(restaurantId!, itemId);
-      setMenuItems(menuItems.filter(item => item._id !== itemId));
+      
+      setCategories(categories.map(category => ({
+        ...category,
+        items: category.items.filter(item => item._id !== itemId)
+      })).filter(category => category.items.length > 0));
+      
       toast({
         title: 'Success',
         description: `${itemToDelete?.name} has been removed from your menu.`,
@@ -192,7 +260,7 @@ const MenuManagement = () => {
 
       <Tabs defaultValue="All" className="mb-8">
         <TabsList className="mb-4 flex flex-wrap">
-          {categories.map((category) => (
+          {availableCategories.map((category) => (
             <TabsTrigger 
               key={category} 
               value={category}
@@ -236,9 +304,19 @@ const MenuManagement = () => {
                       Unavailable
                     </div>
                   )}
+                  {item.popular && (
+                    <div className="absolute top-0 right-0 bg-yellow-500 text-white px-3 py-1 text-sm flex items-center">
+                      <Star className="h-3 w-3 mr-1" /> Popular
+                    </div>
+                  )}
                   <div className="absolute bottom-0 left-0 bg-primary text-white px-3 py-1 text-sm">
                     ${item.price.toFixed(2)}
                   </div>
+                  {item.calories && (
+                    <div className="absolute bottom-0 right-0 bg-gray-800/80 text-white px-3 py-1 text-sm">
+                      {item.calories} cal
+                    </div>
+                  )}
                 </div>
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-2">
@@ -246,7 +324,12 @@ const MenuManagement = () => {
                       <h3 className="font-semibold">{item.name}</h3>
                       <p className="text-xs text-muted-foreground">{item.category}</p>
                     </div>
-                    <div className="flex items-center">
+                    <div className="flex items-center space-x-2">
+                      <Switch 
+                        checked={item.popular} 
+                        onCheckedChange={(checked) => handlePopularChange(checked, item._id)}
+                        className="data-[state=checked]:bg-yellow-500"
+                      />
                       <Switch 
                         checked={item.available} 
                         onCheckedChange={(checked) => handleAvailabilityChange(checked, item._id)}
@@ -272,22 +355,23 @@ const MenuManagement = () => {
       </Tabs>
 
       <AddItemDialog
-        isOpen={isAddDialogOpen}
-        onClose={() => setIsAddDialogOpen(false)}
-        newItem={newItem}
-        categories={categories}
-        onInputChange={handleInputChange}
-        onAvailabilityChange={(checked) => setNewItem({...newItem, available: checked})}
-        onAddItem={handleAddItem}
-      />
+  isOpen={isAddDialogOpen}
+  onClose={() => setIsAddDialogOpen(false)}
+  newItem={newItem}
+  categories={categories.map(c => c.name)}
+  onInputChange={handleInputChange}
+  onPopularChange={(checked) => setNewItem({...newItem, popular: checked})}
+  onAddItem={handleAddItem}
+/>
 
       <EditItemDialog
         isOpen={!!selectedItem}
         onClose={() => setSelectedItem(null)}
         selectedItem={selectedItem}
-        categories={categories}
+        categories={categories.map(c => c.name)}
         onInputChange={handleInputChange}
         onAvailabilityChange={(checked) => selectedItem && setSelectedItem({...selectedItem, available: checked})}
+        onPopularChange={(checked) => selectedItem && setSelectedItem({...selectedItem, popular: checked})}
         onUpdateItem={handleUpdateItem}
       />
     </div>
