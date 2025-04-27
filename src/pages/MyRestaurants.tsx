@@ -7,19 +7,25 @@ import { useAuth } from "../context/AuthContext";
 interface Restaurant {
   _id: string;
   name: string;
-  location: string;
-  image?: {
-    url: string;
-    publicId: string;
-  };
+  address: string;
+  cuisine: string;
+  image?: string;
+  coverImageUrl?: string;
   rating?: number;
   isVerified?: boolean;
 }
 
 interface NewRestaurant {
   name: string;
-  location: string;
-  image: File | null;
+  address: string;
+  cuisine: string;
+  description: string;
+  hours: string;
+  deliveryTime: string;
+  deliveryFee: string;
+  tags: string;
+  image: string;
+  coverImage: string;
 }
 
 const MyRestaurants = () => {
@@ -28,10 +34,16 @@ const MyRestaurants = () => {
   const [showModal, setShowModal] = useState<boolean>(false);
   const [newRestaurant, setNewRestaurant] = useState<NewRestaurant>({
     name: "",
-    location: "",
-    image: null,
+    address: "",
+    cuisine: "",
+    description: "",
+    hours: "",
+    deliveryTime: "30",
+    deliveryFee: "0",
+    tags: "",
+    image: "",
+    coverImage: "",
   });
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,9 +57,7 @@ const MyRestaurants = () => {
       try {
         const res = await axios.get<Restaurant[]>(
           `${apiConfig.getMyRestaurants}${userId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
         setRestaurants(res.data);
       } catch (err) {
@@ -56,6 +66,7 @@ const MyRestaurants = () => {
     };
     fetchMyRestaurants();
   }, [token, userId]);
+
 
   const handleRestaurantClick = (restaurant: Restaurant) => {
     if (restaurant.isVerified) {
@@ -67,55 +78,59 @@ const MyRestaurants = () => {
 
   const handleCreate = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    if (!newRestaurant.image) {
-      setError("Please select an image");
-      return;
-    }
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const formData = new FormData();
-      formData.append("name", newRestaurant.name);
-      formData.append("location", newRestaurant.location);
-      formData.append("owner", userId || "");
-      formData.append("image", newRestaurant.image); // Make sure this is the File object
+      const requiredFields = [
+        newRestaurant.name,
+        newRestaurant.address,
+        newRestaurant.cuisine,
+        newRestaurant.image,
+        newRestaurant.coverImage
+      ];
 
-      const response = await axios.post(apiConfig.createRestaurant, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      if (requiredFields.some(field => !field)) {
+        throw new Error("All required fields must be filled");
+      }
 
-      setRestaurants((prev) => [...prev, response.data.restaurant]);
+      const restaurantData = {
+        ...newRestaurant,
+        owner: userId,
+        tags: newRestaurant.tags,
+        deliveryTime: Number(newRestaurant.deliveryTime),
+        deliveryFee: Number(newRestaurant.deliveryFee)
+      };
+
+      const response = await axios.post(
+        apiConfig.createRestaurant,
+        restaurantData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setRestaurants(prev => [...prev, response.data.restaurant]);
       setShowModal(false);
-      setNewRestaurant({ name: "", location: "", image: null });
-      setImagePreview(null);
+      setNewRestaurant({
+        name: "",
+        address: "",
+        cuisine: "",
+        description: "",
+        hours: "",
+        deliveryTime: "30",
+        deliveryFee: "0",
+        tags: "",
+        image: "",
+        coverImage: "",
+      });
     } catch (error: any) {
-      console.error("Error creating restaurant", error);
-      setError(error.response?.data?.message || "Failed to create restaurant");
+      setError(error.response?.data?.message || error.message);
     } finally {
       setIsLoading(false);
     }
   };
-
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setNewRestaurant((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setNewRestaurant((prev) => ({ ...prev, image: file }));
-
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+    setNewRestaurant(prev => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -142,15 +157,14 @@ const MyRestaurants = () => {
               onClick={() => handleRestaurantClick(restaurant)}
               className="bg-white shadow p-4 rounded border cursor-pointer hover:shadow-md transition"
             >
-              {restaurant.image?.url && (
+              {restaurant.image && (
                 <img
-                  src={restaurant.image.url}
+                  src={restaurant.image}
                   alt={restaurant.name}
                   className="w-full h-48 object-cover rounded mb-3"
                 />
               )}
               <h3 className="text-xl font-semibold">{restaurant.name}</h3>
-              <p className="text-gray-600">📍 {restaurant.location}</p>
               <div className="mt-2">
                 <span
                   className={`px-2 py-1 text-sm rounded ${
@@ -169,75 +183,179 @@ const MyRestaurants = () => {
 
       {/* Create Restaurant Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold">Add New Restaurant</h3>
-              <button
-                onClick={() => {
-                  setShowModal(false);
-                  setError(null);
-                }}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
+               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+               <div className="bg-white p-6 rounded-lg w-full max-w-md">
+                 <div className="flex justify-between items-center mb-4">
+                   <h3 className="text-lg font-semibold">Create New Restaurant</h3>
+                   <button
+                     onClick={() => setShowModal(false)}
+                     className="text-gray-500 hover:text-gray-700"
+                   >
+                     ✕
+                   </button>
+                 </div>
+          {/* ... keep modal header the same ... */}
+
+          <form onSubmit={handleCreate} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Restaurant Name*
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={newRestaurant.name}
+                onChange={handleChange}
+                className="w-full border px-4 py-2 rounded focus:ring-2 focus:ring-green-500"
+                required
+              />
             </div>
 
-            {error && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                {error}
-              </div>
-            )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Address*
+              </label>
+              <input
+                type="text"
+                name="address"
+                value={newRestaurant.address}
+                onChange={handleChange}
+                className="w-full border px-4 py-2 rounded focus:ring-2 focus:ring-green-500"
+                required
+              />
+            </div>
 
-            <form onSubmit={handleCreate} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Cuisine Type*
+              </label>
+              <input
+                type="text"
+                name="cuisine"
+                value={newRestaurant.cuisine}
+                onChange={handleChange}
+                className="w-full border px-4 py-2 rounded focus:ring-2 focus:ring-green-500"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Description*
+              </label>
+              <textarea
+                name="description"
+                value={newRestaurant.description}
+                onChange={handleChange}
+                className="w-full border px-4 py-2 rounded focus:ring-2 focus:ring-green-500"
+                required
+                rows={3}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Opening Hours*
+              </label>
+              <input
+                type="text"
+                name="hours"
+                value={newRestaurant.hours}
+                onChange={handleChange}
+                placeholder="Example: Monday - Sunday: 11:00 AM - 10:00 PM"
+                className="w-full border px-4 py-2 rounded focus:ring-2 focus:ring-green-500"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Restaurant Name
+                  Delivery Time (min)*
                 </label>
                 <input
-                  type="text"
-                  name="name"
-                  placeholder="Restaurant Name"
-                  value={newRestaurant.name}
+                  type="number"
+                  name="deliveryTime"
+                  value={newRestaurant.deliveryTime}
                   onChange={handleChange}
-                  className="w-full border px-4 py-2 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full border px-4 py-2 rounded focus:ring-2 focus:ring-green-500"
                   required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Location
+                  Delivery Fee*
                 </label>
                 <input
-                  type="text"
-                  name="location"
-                  placeholder="Location"
-                  value={newRestaurant.location}
+                  type="number"
+                  name="deliveryFee"
+                  value={newRestaurant.deliveryFee}
                   onChange={handleChange}
-                  className="w-full border px-4 py-2 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full border px-4 py-2 rounded focus:ring-2 focus:ring-green-500"
                   required
                 />
               </div>
+            </div>
 
-              <div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tags (comma-separated)
+              </label>
+              <input
+                type="text"
+                name="tags"
+                value={newRestaurant.tags}
+                onChange={handleChange}
+                placeholder="Example: Pizza, Italian, Pasta"
+                className="w-full border px-4 py-2 rounded focus:ring-2 focus:ring-green-500"
+              />
+            </div>
+
+            <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Restaurant Image
+                  Main Image URL*
                 </label>
                 <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="w-full border px-4 py-2 rounded file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                  type="url"
+                  name="image"
+                  value={newRestaurant.image}
+                  onChange={handleChange}
+                  placeholder="https://example.com/image.jpg"
+                  className="w-full border px-4 py-2 rounded focus:ring-2 focus:ring-green-500"
                   required
                 />
-                {imagePreview && (
+                {newRestaurant.image && (
                   <div className="mt-3">
                     <p className="text-sm text-gray-500 mb-1">Preview:</p>
                     <img
-                      src={imagePreview}
+                      src={newRestaurant.image}
                       alt="Preview"
+                      className="w-full h-48 object-cover rounded border"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Cover Image URL*
+                </label>
+                <input
+                  type="url"
+                  name="coverImage"
+                  value={newRestaurant.coverImage}
+                  onChange={handleChange}
+                  placeholder="https://example.com/cover-image.jpg"
+                  className="w-full border px-4 py-2 rounded focus:ring-2 focus:ring-green-500"
+                  required
+                />
+                {newRestaurant.coverImage && (
+                  <div className="mt-3">
+                    <p className="text-sm text-gray-500 mb-1">Preview:</p>
+                    <img
+                      src={newRestaurant.coverImage}
+                      alt="Cover Preview"
                       className="w-full h-48 object-cover rounded border"
                     />
                   </div>
@@ -247,10 +365,7 @@ const MyRestaurants = () => {
               <div className="flex justify-end space-x-2 pt-4">
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowModal(false);
-                    setError(null);
-                  }}
+                  onClick={() => setShowModal(false)}
                   className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 transition"
                   disabled={isLoading}
                 >
