@@ -26,22 +26,6 @@ export const createMenuItem = async (restaurantId: string, menuItem: any) => {
   return response.data;
 };
 
-export const updateMenuItem = async (
-  restaurantId: string,
-  menuItemId: string,
-  updates: any
-) => {
-  const token = localStorage.getItem("restaurantToken");
-  const response = await axios.put(
-    `${API_BASE_URL}/restaurants/${restaurantId}/menu/${menuItemId}`,
-    updates,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    }
-  );
-  return response.data;
-};
-
 export const deleteMenuItem = async (
   restaurantId: string,
   menuItemId: string
@@ -55,7 +39,28 @@ export const deleteMenuItem = async (
   );
 };
 
-export const toggleMenuItemAvailability = async (
+// For general updates
+export const updateMenuItem = async (
+  restaurantId: string,
+  menuItemId: string,
+  updates: any
+) => {
+  const token = localStorage.getItem("restaurantToken");
+  const response = await axios.put(
+    `${API_BASE_URL}/restaurants/${restaurantId}/menu/${menuItemId}`,
+    updates,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+  return response.data; 
+};
+
+// For availability toggle
+export const toggleAvailability = async (
   restaurantId: string,
   menuItemId: string,
   available: boolean
@@ -68,5 +73,22 @@ export const toggleMenuItemAvailability = async (
       headers: { Authorization: `Bearer ${token}` },
     }
   );
-  return response.data;
+  return response.data.menuItem;
+};
+
+// For popularity toggle
+export const toggleMenuItemPopularity = async (
+  restaurantId: string,
+  menuItemId: string,
+  popular: boolean
+) => {
+  const token = localStorage.getItem("restaurantToken");
+  const response = await axios.patch(
+    `${API_BASE_URL}/restaurants/${restaurantId}/menu/${menuItemId}/popularity`,
+    { popular },
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+  return response.data.menuItem;
 };

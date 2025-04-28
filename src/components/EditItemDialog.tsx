@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 
 interface MenuItem {
-  _id: string;
+  id: string;
   name: string;
   description: string;
   price: number;

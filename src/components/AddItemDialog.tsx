@@ -38,6 +38,33 @@ interface AddItemDialogProps {
   onAddItem: () => void;
 }
 
+const categories = [
+  "Appetizers",
+  "Main Course",
+  "Desserts",
+  "Beverages",
+  "Salads",
+  "Sides",
+  "Soups",
+  "Sandwiches",
+  "Pasta",
+  "Pizza",
+  "Seafood",
+  "Vegetarian",
+  "Vegan",
+  "Gluten-Free",
+  "Breakfast",
+  "Brunch",
+  "Snacks",
+  "Specials",
+  "Kids Menu",
+  "Healthy Options",
+  "Seasonal",
+  "Limited Time Offer",
+];
+
+
+
 const AddItemDialog: React.FC<AddItemDialogProps> = ({
   isOpen,
   onClose,
