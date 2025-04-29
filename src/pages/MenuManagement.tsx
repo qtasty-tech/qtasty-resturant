@@ -26,7 +26,7 @@ interface MenuItem {
   description: string;
   price: number;
   category: string;
-  image: string;
+  imageUrl: string;
   available: boolean;
   popular: boolean;
   calories: string;
@@ -52,7 +52,7 @@ const MenuManagement = () => {
     description: "",
     price: 0,
     category: "",
-    image: "",
+    imageUrl: "",
     available: true,
     popular: false,
     calories: "",
@@ -186,7 +186,7 @@ const MenuManagement = () => {
         description: "",
         price: 0,
         category: "",
-        image: "",
+        imageUrl: "",
         available: true,
         popular: false,
         calories: "",
@@ -316,7 +316,7 @@ const MenuManagement = () => {
                 >
                   <div className="relative h-48 w-full">
                     <img
-                      src={item.image || "/placeholder.svg"}
+                      src={item.imageUrl || "/placeholder.svg"}
                       alt={item.name}
                       className="w-full h-full object-cover"
                     />
