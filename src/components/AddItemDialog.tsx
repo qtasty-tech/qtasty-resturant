@@ -19,7 +19,7 @@ interface MenuItem {
   description: string;
   price: number;
   category: string;
-  image: string;
+  imageUrl: string;
   popular: boolean;
   calories: string;
 }
@@ -164,14 +164,14 @@ const AddItemDialog: React.FC<AddItemDialogProps> = ({
               <Input
                 id="image"
                 name="image"
-                value={newItem.image}
+                value={newItem.imageUrl}
                 onChange={onInputChange}
                 placeholder="https://example.com/image.jpg"
               />
-              {newItem.image && (
+              {newItem.imageUrl && (
                 <div className="mt-2 rounded-md overflow-hidden border">
                   <img
-                    src={newItem.image}
+                    src={newItem.imageUrl}
                     alt="Preview"
                     className="w-full h-32 object-cover"
                     onError={(e) => {

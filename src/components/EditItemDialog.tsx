@@ -19,7 +19,7 @@ interface MenuItem {
   description: string;
   price: number;
   category: string;
-  image: string;
+  imageUrl: string;
   available: boolean;
   popular: boolean;
   calories: string;
@@ -125,12 +125,12 @@ const EditItemDialog: React.FC<EditItemDialogProps> = ({
             <Input
               id="edit-image"
               name="image"
-              value={selectedItem.image}
+              value={selectedItem.imageUrl}
               onChange={onInputChange}
             />
             <div className="h-32 mt-2 rounded overflow-hidden">
               <img
-                src={selectedItem.image || "/placeholder.svg"}
+                src={selectedItem.imageUrl || "/placeholder.svg"}
                 alt={selectedItem.name}
                 className="w-full h-full object-cover"
               />
