@@ -209,13 +209,14 @@ const Login = () => {
               </div>
 
               <div className="mt-6 text-center">
-                <p className="text-sm text-gray-500">
-                  Don't have a restaurant account?{" "}
-                  <a href="#" className="font-medium" style={{ color: "#5DAA80" }}>
-                    Contact our team
-                  </a>
-                </p>
-              </div>
+  <p className="text-sm text-gray-500">
+    Don't have a restaurant account?{" "}
+    <a href="/auth/signup" className="font-medium" style={{ color: "#5DAA80" }}>
+      Register here
+    </a>
+  </p>
+</div>
+
             </div>
           </div>
           

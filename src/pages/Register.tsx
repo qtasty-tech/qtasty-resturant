@@ -227,7 +227,7 @@ const Register = () => {
               <div className="mt-6 text-center">
                 <p className="text-sm text-gray-500">
                   Have a restaurant account?{" "}
-                  <a href="/auth/signin" className="font-medium" style={{ color: "#5DAA80" }}>
+                  <a href="/" className="font-medium" style={{ color: "#5DAA80" }}>
                     Sign in instead
                   </a>
                 </p>
