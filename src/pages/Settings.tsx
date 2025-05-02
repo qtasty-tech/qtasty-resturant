@@ -1,63 +1,96 @@
-
-import { useState } from 'react';
-import { PageHeader } from '@/components/ui/page-header';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { useToast } from '@/components/ui/use-toast';
+import { useEffect, useState } from "react";
+import { PageHeader } from "@/components/ui/page-header";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/components/ui/use-toast";
+import { useParams } from "react-router-dom";
+import apiConfig from "@/utils/apiConfig";
 
 const Settings = () => {
+  const { id } = useParams();
   const [restaurantData, setRestaurantData] = useState({
-    name: 'Tasty Delights',
-    address: '123 Main Street, Anytown, AN 12345',
-    phone: '(555) 123-4567',
-    email: 'info@tastydelights.com',
-    description: 'Serving delicious food made with fresh ingredients since 2015.',
-    openingHours: 'Mon-Fri: 11AM-10PM, Sat-Sun: 10AM-11PM',
-    website: 'https://tastydelights.com'
+    name: "",
+    address: "",
+    phone: "",
+    email: "",
+    website: "",
+    openingHours: "",
+    description: "",
+    image: "",
+    coverImageUrl: "",
   });
+
+  useEffect(() => {
+    const fetchRestaurantName = async () => {
+      try {
+        const token = localStorage.getItem("restaurantToken");
+        const response = await fetch(
+          `${apiConfig.getMyRestaurants}by-id/${id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        const data = await response.json();
+        setRestaurantData(data);
+      } catch (error) {
+        console.error("Error fetching restaurant name:", error);
+      }
+    };
+
+    fetchRestaurantName();
+  }, [id]);
 
   const [preferences, setPreferences] = useState({
     autoAcceptOrders: true,
     emailNotifications: true,
     smsNotifications: false,
     appNotifications: true,
-    soundAlerts: true
+    soundAlerts: true,
   });
 
   const { toast } = useToast();
 
-  const handleRestaurantChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleRestaurantChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setRestaurantData(prev => ({ ...prev, [name]: value }));
+    setRestaurantData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handlePreferenceChange = (name: string, value: boolean) => {
-    setPreferences(prev => ({ ...prev, [name]: value }));
+    setPreferences((prev) => ({ ...prev, [name]: value }));
   };
 
   const saveRestaurantProfile = () => {
     toast({
-      title: 'Profile Updated',
-      description: 'Your restaurant profile has been successfully updated.',
+      title: "Profile Updated",
+      description: "Your restaurant profile has been successfully updated.",
     });
   };
 
   const savePreferences = () => {
     toast({
-      title: 'Preferences Saved',
-      description: 'Your notification preferences have been updated.',
+      title: "Preferences Saved",
+      description: "Your notification preferences have been updated.",
     });
   };
 
   const savePassword = () => {
     toast({
-      title: 'Password Updated',
-      description: 'Your password has been successfully changed.',
+      title: "Password Updated",
+      description: "Your password has been successfully changed.",
     });
   };
 
@@ -94,7 +127,7 @@ const Settings = () => {
                     onChange={handleRestaurantChange}
                   />
                 </div>
-                
+
                 <div className="grid gap-3">
                   <Label htmlFor="address">Address</Label>
                   <Input
@@ -104,7 +137,7 @@ const Settings = () => {
                     onChange={handleRestaurantChange}
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="grid gap-3">
                     <Label htmlFor="phone">Phone Number</Label>
@@ -125,7 +158,7 @@ const Settings = () => {
                     />
                   </div>
                 </div>
-                
+
                 <div className="grid gap-3">
                   <Label htmlFor="website">Website (Optional)</Label>
                   <Input
@@ -135,7 +168,7 @@ const Settings = () => {
                     onChange={handleRestaurantChange}
                   />
                 </div>
-                
+
                 <div className="grid gap-3">
                   <Label htmlFor="openingHours">Opening Hours</Label>
                   <Input
@@ -145,7 +178,7 @@ const Settings = () => {
                     onChange={handleRestaurantChange}
                   />
                 </div>
-                
+
                 <div className="grid gap-3">
                   <Label htmlFor="description">Restaurant Description</Label>
                   <Textarea
@@ -156,29 +189,30 @@ const Settings = () => {
                     rows={4}
                   />
                 </div>
-                
+
                 <div className="grid gap-3">
                   <Label htmlFor="logo">Restaurant Logo</Label>
                   <div className="flex items-center gap-4">
                     <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center">
-                      <img 
-                        src="/placeholder.svg" 
-                        alt="Restaurant Logo" 
+                      <img
+                        src={restaurantData.image}
+                        alt="Restaurant Logo"
                         className="w-16 h-16 rounded-full object-cover"
                       />
                     </div>
-                    <Button variant="outline">
-                      Change Logo
-                    </Button>
+                    <Button variant="outline">Change Logo</Button>
                   </div>
                 </div>
-                
+
                 <div className="grid gap-3">
                   <Label htmlFor="coverImage">Cover Image</Label>
                   <div className="h-40 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <Button variant="outline">
-                      Upload Cover Image
-                    </Button>
+                    <img
+                      src={restaurantData.coverImageUrl}
+                      alt="Cover Image"
+                      className="w-full h-full rounded-lg object-cover"
+                    ></img>
+                    <Button variant="outline">Upload Cover Image</Button>
                   </div>
                 </div>
               </div>
@@ -204,23 +238,28 @@ const Settings = () => {
                   <div className="space-y-0.5">
                     <Label htmlFor="autoAccept">Auto-Accept Orders</Label>
                     <p className="text-sm text-muted-foreground">
-                      Automatically accept new orders without manual confirmation
+                      Automatically accept new orders without manual
+                      confirmation
                     </p>
                   </div>
                   <Switch
                     id="autoAccept"
                     checked={preferences.autoAcceptOrders}
-                    onCheckedChange={(checked) => handlePreferenceChange('autoAcceptOrders', checked)}
+                    onCheckedChange={(checked) =>
+                      handlePreferenceChange("autoAcceptOrders", checked)
+                    }
                   />
                 </div>
-                
+
                 <div className="border-t pt-6">
                   <h3 className="font-medium mb-4">Notification Preferences</h3>
-                  
+
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label htmlFor="emailNotifications">Email Notifications</Label>
+                        <Label htmlFor="emailNotifications">
+                          Email Notifications
+                        </Label>
                         <p className="text-sm text-muted-foreground">
                           Receive order updates and summaries via email
                         </p>
@@ -228,13 +267,17 @@ const Settings = () => {
                       <Switch
                         id="emailNotifications"
                         checked={preferences.emailNotifications}
-                        onCheckedChange={(checked) => handlePreferenceChange('emailNotifications', checked)}
+                        onCheckedChange={(checked) =>
+                          handlePreferenceChange("emailNotifications", checked)
+                        }
                       />
                     </div>
-                    
+
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label htmlFor="smsNotifications">SMS Notifications</Label>
+                        <Label htmlFor="smsNotifications">
+                          SMS Notifications
+                        </Label>
                         <p className="text-sm text-muted-foreground">
                           Receive order alerts via text message
                         </p>
@@ -242,13 +285,17 @@ const Settings = () => {
                       <Switch
                         id="smsNotifications"
                         checked={preferences.smsNotifications}
-                        onCheckedChange={(checked) => handlePreferenceChange('smsNotifications', checked)}
+                        onCheckedChange={(checked) =>
+                          handlePreferenceChange("smsNotifications", checked)
+                        }
                       />
                     </div>
-                    
+
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label htmlFor="appNotifications">App Notifications</Label>
+                        <Label htmlFor="appNotifications">
+                          App Notifications
+                        </Label>
                         <p className="text-sm text-muted-foreground">
                           Receive push notifications in the Q-Tasty app
                         </p>
@@ -256,10 +303,12 @@ const Settings = () => {
                       <Switch
                         id="appNotifications"
                         checked={preferences.appNotifications}
-                        onCheckedChange={(checked) => handlePreferenceChange('appNotifications', checked)}
+                        onCheckedChange={(checked) =>
+                          handlePreferenceChange("appNotifications", checked)
+                        }
                       />
                     </div>
-                    
+
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
                         <Label htmlFor="soundAlerts">Sound Alerts</Label>
@@ -270,7 +319,9 @@ const Settings = () => {
                       <Switch
                         id="soundAlerts"
                         checked={preferences.soundAlerts}
-                        onCheckedChange={(checked) => handlePreferenceChange('soundAlerts', checked)}
+                        onCheckedChange={(checked) =>
+                          handlePreferenceChange("soundAlerts", checked)
+                        }
                       />
                     </div>
                   </div>
@@ -278,7 +329,9 @@ const Settings = () => {
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={savePreferences} className="ml-auto">Save Preferences</Button>
+              <Button onClick={savePreferences} className="ml-auto">
+                Save Preferences
+              </Button>
             </CardFooter>
           </Card>
         </TabsContent>
@@ -297,20 +350,22 @@ const Settings = () => {
                   <Label htmlFor="currentPassword">Current Password</Label>
                   <Input id="currentPassword" type="password" />
                 </div>
-                
+
                 <div className="grid gap-3">
                   <Label htmlFor="newPassword">New Password</Label>
                   <Input id="newPassword" type="password" />
                 </div>
-                
+
                 <div className="grid gap-3">
                   <Label htmlFor="confirmPassword">Confirm New Password</Label>
                   <Input id="confirmPassword" type="password" />
                 </div>
-                
+
                 <div className="border-t pt-6">
-                  <h3 className="font-medium mb-4">Two-Factor Authentication</h3>
-                  
+                  <h3 className="font-medium mb-4">
+                    Two-Factor Authentication
+                  </h3>
+
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label>Enable Two-Factor Authentication</Label>
@@ -318,15 +373,15 @@ const Settings = () => {
                         Add an extra layer of security to your account
                       </p>
                     </div>
-                    <Button variant="outline">
-                      Set Up 2FA
-                    </Button>
+                    <Button variant="outline">Set Up 2FA</Button>
                   </div>
                 </div>
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={savePassword} className="ml-auto">Update Password</Button>
+              <Button onClick={savePassword} className="ml-auto">
+                Update Password
+              </Button>
             </CardFooter>
           </Card>
         </TabsContent>
@@ -335,7 +390,9 @@ const Settings = () => {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Privacy Policy and Terms</CardTitle>
-          <CardDescription>Review our legal agreements and policies</CardDescription>
+          <CardDescription>
+            Review our legal agreements and policies
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -358,9 +415,7 @@ const Settings = () => {
       <Card className="border-red-100">
         <CardHeader>
           <CardTitle className="text-red-600">Danger Zone</CardTitle>
-          <CardDescription>
-            Actions that can't be undone
-          </CardDescription>
+          <CardDescription>Actions that can't be undone</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -369,19 +424,20 @@ const Settings = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Temporarily hide your restaurant from the Q-Tasty marketplace
               </p>
-              <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50">
+              <Button
+                variant="outline"
+                className="text-red-600 border-red-200 hover:bg-red-50"
+              >
                 Deactivate Account
               </Button>
             </div>
-            
+
             <div className="p-4 border border-red-100 rounded-lg">
               <h3 className="font-medium">Delete Account</h3>
               <p className="text-sm text-muted-foreground mb-4">
                 Permanently remove your restaurant and all its data from Q-Tasty
               </p>
-              <Button variant="destructive">
-                Delete Account
-              </Button>
+              <Button variant="destructive">Delete Account</Button>
             </div>
           </div>
         </CardContent>
