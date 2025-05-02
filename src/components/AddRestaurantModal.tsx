@@ -24,6 +24,10 @@ interface NewRestaurant {
 
 interface AddRestaurantModalProps {
   showModal: boolean;
+  userId: string | undefined;
+  token: string | undefined;
+  setRestaurants: (restaurants: any) => void; 
+  setError: (error: string | null) => void;
   setShowModal: (state: boolean) => void;
 }
 

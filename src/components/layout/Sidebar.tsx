@@ -1,6 +1,5 @@
-
-import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { NavLink } from "react-router-dom";
 import {
   Sidebar as SidebarContainer,
   SidebarContent,
@@ -13,25 +12,45 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-} from '@/components/ui/sidebar';
-import { 
-  Home, 
-  Menu as MenuIcon, 
-  Package, 
-  ChartBar, 
-  Bell, 
+} from "@/components/ui/sidebar";
+import {
+  Home,
+  Menu as MenuIcon,
+  Package,
+  ChartBar,
+  Bell,
   CreditCard,
   Settings,
-  LogOut
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { useParams } from 'react-router-dom';
+  LogOut,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useParams } from "react-router-dom";
+import apiConfig from "@/utils/apiConfig";
 
 const Sidebar = () => {
   const { id } = useParams();
   const isMobile = useIsMobile();
-  const [restaurantName, setRestaurantName] = useState('Restaurant Name');
+  const [restaurantName, setRestaurantName] = useState("Restaurant Name");
+  const [restaurantImage, setRestaurantImage] = useState("");
+
+  useEffect(() => {
+    const fetchRestaurantName = async () => {
+      try {
+        const token = localStorage.getItem("restaurantToken");
+        const response = await fetch(`${apiConfig.getMyRestaurants}by-id/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      const data = await response.json();
+      setRestaurantName(data?.name);
+      setRestaurantImage(data?.image);
+      } catch (error) {
+        console.error("Error fetching restaurant name:", error);
+      }
+    };
+
+    fetchRestaurantName();
+  }, [id]);
 
   return (
     <>
@@ -44,12 +63,18 @@ const Sidebar = () => {
       <SidebarContainer>
         <SidebarHeader className="border-b p-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold">
-              Q
+            <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+              {restaurantImage ? (
+              <img src={restaurantImage} alt="Restaurant" className="w-full h-full object-cover" />
+              ) : (
+              <span className="text-sm text-muted-foreground">N/A</span>
+              )}
             </div>
             <div className="flex flex-col">
               <span className="font-semibold text-sm">Q-Tasty Partner</span>
-              <span className="text-xs text-muted-foreground truncate">{restaurantName}</span>
+              <span className="text-xs text-muted-foreground truncate">
+                {restaurantName}
+              </span>
             </div>
           </div>
         </SidebarHeader>
@@ -60,17 +85,25 @@ const Sidebar = () => {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                  <NavLink to={`/${id}`} className={({ isActive }) => isActive ? "text-primary w-full" : "w-full"}>
-                    <Home className="w-5 h-5" />
-                    <span>Dashboard</span>
-                  </NavLink>
+                    <NavLink
+                      to={`/${id}`}
+                      className={({ isActive }) =>
+                        isActive ? "text-primary w-full" : "w-full"
+                      }
+                    >
+                      <Home className="w-5 h-5" />
+                      <span>Dashboard</span>
+                    </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink to={`/${id}/menu`} className={({ isActive }) => 
-                      isActive ? "text-primary w-full" : "w-full"
-                    }>
+                    <NavLink
+                      to={`/${id}/menu`}
+                      className={({ isActive }) =>
+                        isActive ? "text-primary w-full" : "w-full"
+                      }
+                    >
                       <MenuIcon className="w-5 h-5" />
                       <span>Menu Management</span>
                     </NavLink>
@@ -78,9 +111,12 @@ const Sidebar = () => {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink to={`/${id}/orders`} className={({ isActive }) => 
-                      isActive ? "text-primary w-full" : "w-full"
-                    }>
+                    <NavLink
+                      to={`/${id}/orders`}
+                      className={({ isActive }) =>
+                        isActive ? "text-primary w-full" : "w-full"
+                      }
+                    >
                       <Package className="w-5 h-5" />
                       <span>Order Management</span>
                     </NavLink>
@@ -88,9 +124,12 @@ const Sidebar = () => {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink to={`/${id}/analytics`} className={({ isActive }) => 
-                      isActive ? "text-primary w-full" : "w-full"
-                    }>
+                    <NavLink
+                      to={`/${id}/analytics`}
+                      className={({ isActive }) =>
+                        isActive ? "text-primary w-full" : "w-full"
+                      }
+                    >
                       <ChartBar className="w-5 h-5" />
                       <span>Analytics</span>
                     </NavLink>
@@ -98,9 +137,12 @@ const Sidebar = () => {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink to={`/${id}/marketing`} className={({ isActive }) => 
-                      isActive ? "text-primary w-full" : "w-full"
-                    }>
+                    <NavLink
+                      to={`/${id}/marketing`}
+                      className={({ isActive }) =>
+                        isActive ? "text-primary w-full" : "w-full"
+                      }
+                    >
                       <Bell className="w-5 h-5" />
                       <span>Marketing</span>
                     </NavLink>
@@ -108,9 +150,12 @@ const Sidebar = () => {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink to={`/${id}/finances`} className={({ isActive }) => 
-                      isActive ? "text-primary w-full" : "w-full"
-                    }>
+                    <NavLink
+                      to={`/${id}/finances`}
+                      className={({ isActive }) =>
+                        isActive ? "text-primary w-full" : "w-full"
+                      }
+                    >
                       <CreditCard className="w-5 h-5" />
                       <span>Finances</span>
                     </NavLink>
@@ -125,9 +170,12 @@ const Sidebar = () => {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink to={`/${id}/settings`} className={({ isActive }) => 
-                      isActive ? "text-primary w-full" : "w-full"
-                    }>
+                    <NavLink
+                      to={`/${id}/settings`}
+                      className={({ isActive }) =>
+                        isActive ? "text-primary w-full" : "w-full"
+                      }
+                    >
                       <Settings className="w-5 h-5" />
                       <span>Account Settings</span>
                     </NavLink>
@@ -138,7 +186,11 @@ const Sidebar = () => {
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter className="border-t p-4">
-          <Button variant="outline" className="w-full justify-start gap-2" size="sm">
+          <Button
+            variant="outline"
+            className="w-full justify-start gap-2"
+            size="sm"
+          >
             <LogOut className="w-4 h-4" />
             <span>Logout</span>
           </Button>

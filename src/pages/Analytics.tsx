@@ -1,113 +1,191 @@
+import { useState, useMemo } from "react";
+import { useParams } from "react-router-dom";
+import { PageHeader } from "@/components/ui/page-header";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from "recharts";
+import { TrendingUp, TrendingDown } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import axios from "axios";
+import apiConfig from "@/utils/apiConfig";
+import { useQuery } from "@tanstack/react-query";
+import { subDays, format, startOfDay, endOfDay } from "date-fns";
 
-import { useState, useEffect } from 'react';
-import { PageHeader } from '@/components/ui/page-header';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { TrendingUp, TrendingDown, ChartBar } from 'lucide-react';
+interface ChartData {
+  name: string;
+  revenue?: number;
+  orders?: number;
+}
+
+interface CategoryData {
+  name: string;
+  value: number;
+}
+
+interface TopSellingItem {
+  name: string;
+  orders: number;
+  change: number;
+}
 
 const Analytics = () => {
-  const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState('week');
+  const { id } = useParams<{ id: string }>();
+  const { toast } = useToast();
+  const [timeRange, setTimeRange] = useState<"week" | "month">("week");
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, []);
+  // Fetch metrics and orders
+  const fetchMetrics = async () => {
+    const token = localStorage.getItem("restaurantToken");
+    if (!token) throw new Error("No authentication token found");
 
-  const weekdayRevenueData = [
-    { name: 'Mon', revenue: 580 },
-    { name: 'Tue', revenue: 650 },
-    { name: 'Wed', revenue: 740 },
-    { name: 'Thu', revenue: 620 },
-    { name: 'Fri', revenue: 910 },
-    { name: 'Sat', revenue: 1150 },
-    { name: 'Sun', revenue: 960 },
-  ];
+    const today = new Date();
+    const startDate =
+      timeRange === "week" ? subDays(today, 6) : subDays(today, 29);
+    const startDateUTC = new Date(
+      Date.UTC(
+        startDate.getUTCFullYear(),
+        startDate.getUTCMonth(),
+        startDate.getUTCDate()
+      )
+    );
+    const endDateUTC = new Date(
+      Date.UTC(
+        today.getUTCFullYear(),
+        today.getUTCMonth(),
+        today.getUTCDate(),
+        23,
+        59,
+        59,
+        999
+      )
+    );
 
-  const monthlyRevenueData = [
-    { name: 'Jan', revenue: 4200 },
-    { name: 'Feb', revenue: 4500 },
-    { name: 'Mar', revenue: 5100 },
-    { name: 'Apr', revenue: 4800 },
-    { name: 'May', revenue: 5300 },
-    { name: 'Jun', revenue: 6200 },
-    { name: 'Jul', revenue: 6800 },
-    { name: 'Aug', revenue: 7100 },
-    { name: 'Sep', revenue: 6500 },
-    { name: 'Oct', revenue: 5900 },
-    { name: 'Nov', revenue: 6300 },
-    { name: 'Dec', revenue: 7500 },
-  ];
+    const response = await axios.get(
+      `${apiConfig.getRestaurantMetrics}/${id}/metrics`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        params: {
+          startDate: startDateUTC.toISOString(),
+          endDate: endDateUTC.toISOString(),
+          page: 1,
+          limit: 50,
+        },
+      }
+    );
+    return response.data;
+  };
 
-  const weekdayOrdersData = [
-    { name: 'Mon', orders: 28 },
-    { name: 'Tue', orders: 32 },
-    { name: 'Wed', orders: 36 },
-    { name: 'Thu', orders: 30 },
-    { name: 'Fri', orders: 45 },
-    { name: 'Sat', orders: 58 },
-    { name: 'Sun', orders: 48 },
-  ];
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["analyticsMetrics", id, timeRange],
+    queryFn: fetchMetrics,
+    enabled: !!id,
+  });
 
-  const monthlyOrdersData = [
-    { name: 'Jan', orders: 210 },
-    { name: 'Feb', orders: 225 },
-    { name: 'Mar', orders: 255 },
-    { name: 'Apr', orders: 240 },
-    { name: 'May', orders: 265 },
-    { name: 'Jun', orders: 310 },
-    { name: 'Jul', orders: 340 },
-    { name: 'Aug', orders: 355 },
-    { name: 'Sep', orders: 325 },
-    { name: 'Oct', orders: 295 },
-    { name: 'Nov', orders: 315 },
-    { name: 'Dec', orders: 375 },
-  ];
+  // Memoized chart data
+  const revenueData = useMemo(() => {
+    if (!data?.metrics?.dailyBreakdown) return [];
+    const days = Array.from(
+      { length: timeRange === "week" ? 7 : 30 },
+      (_, i) => {
+        const day = subDays(new Date(), i);
+        return startOfDay(day);
+      }
+    ).reverse();
 
-  const hourlyOrdersData = [
-    { hour: '6 AM', orders: 2 },
-    { hour: '7 AM', orders: 5 },
-    { hour: '8 AM', orders: 10 },
-    { hour: '9 AM', orders: 8 },
-    { hour: '10 AM', orders: 6 },
-    { hour: '11 AM', orders: 12 },
-    { hour: '12 PM', orders: 18 },
-    { hour: '1 PM', orders: 16 },
-    { hour: '2 PM', orders: 9 },
-    { hour: '3 PM', orders: 7 },
-    { hour: '4 PM', orders: 10 },
-    { hour: '5 PM', orders: 15 },
-    { hour: '6 PM', orders: 22 },
-    { hour: '7 PM', orders: 20 },
-    { hour: '8 PM', orders: 18 },
-    { hour: '9 PM', orders: 12 },
-    { hour: '10 PM', orders: 6 },
-  ];
+    return days.map((day) => {
+      const dateStr = format(day, "yyyy-MM-dd");
+      const dayData = data.metrics.dailyBreakdown.find(
+        (d: any) => d.date === dateStr
+      );
+      return {
+        name: format(day, timeRange === "week" ? "EEE" : "MMM d"),
+        revenue: dayData?.revenue || 0,
+      };
+    });
+  }, [data, timeRange]);
 
-  const categoryData = [
-    { name: 'Mains', value: 45 },
-    { name: 'Sides', value: 20 },
-    { name: 'Drinks', value: 15 },
-    { name: 'Desserts', value: 10 },
-    { name: 'Salads', value: 10 },
-  ];
-  
-  const COLORS = ['#5DAA80', '#FAC849', '#F15D36', '#36A2EB', '#9966FF'];
+  const ordersData = useMemo(() => {
+    if (!data?.metrics?.dailyBreakdown) return [];
+    const days = Array.from(
+      { length: timeRange === "week" ? 7 : 30 },
+      (_, i) => {
+        const day = subDays(new Date(), i);
+        return startOfDay(day);
+      }
+    ).reverse();
 
-  const topSellingItems = [
-    { name: 'Classic Cheeseburger', orders: 124, change: 8 },
-    { name: 'French Fries', orders: 92, change: 5 },
-    { name: 'Margherita Pizza', orders: 87, change: -3 },
-    { name: 'Chocolate Brownie', orders: 68, change: 12 },
-    { name: 'Caesar Salad', orders: 54, change: 2 },
-  ];
+    return days.map((day) => {
+      const dateStr = format(day, "yyyy-MM-dd");
+      const dayData = data.metrics.dailyBreakdown.find(
+        (d: any) => d.date === dateStr
+      );
+      return {
+        name: format(day, timeRange === "week" ? "EEE" : "MMM d"),
+        orders: dayData?.orders || 0,
+      };
+    });
+  }, [data, timeRange]);
+
+  const hourlyOrdersData = useMemo(() => {
+    if (!data?.metrics?.hourlyBreakdown) return [];
+    return Array.from({ length: 24 }, (_, i) => {
+      const hourData = data.metrics.hourlyBreakdown.find(
+        (d: any) => d.hour === i
+      );
+      return {
+        name: `${i % 12 || 12} ${i < 12 ? "AM" : "PM"}`,
+        orders: hourData?.orders || 0,
+      };
+    });
+  }, [data]);
+
+  const categoryData = useMemo(() => {
+    return data?.metrics.categoryBreakdown || [];
+  }, [data]);
+
+  const topSellingItems = useMemo(() => {
+    return (data?.metrics.categoryBreakdown || [])
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5)
+      .map((item) => ({
+        name: item.name,
+        orders: item.value,
+        change: 0, // Mock
+      }));
+  }, [data]);
+
+  if (error) {
+    toast({
+      title: "Error",
+      description: error.message || "Failed to fetch analytics data",
+      variant: "destructive",
+    });
+  }
+
+  const COLORS = ["#5DAA80", "#FAC849", "#F15D36", "#36A2EB", "#9966FF"];
 
   const renderStats = () => {
-    if (loading) {
+    if (isLoading) {
       return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {[1, 2, 3, 4].map((i) => (
@@ -130,12 +208,13 @@ const Analytics = () => {
         <Card className="dashboard-stat">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Revenue ({timeRange === 'week' ? 'This Week' : 'This Month'})
+              Total Revenue ({timeRange === "week" ? "This Week" : "This Month"}
+              )
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="dashboard-stat-value">
-              ${timeRange === 'week' ? '5,610' : '24,500'}
+              ${(data?.metrics.totalRevenue || 0).toFixed(2)}
             </div>
             <div className="flex items-center text-xs text-green-600 font-medium">
               <TrendingUp className="mr-1 h-3 w-3" />
@@ -143,16 +222,16 @@ const Analytics = () => {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="dashboard-stat">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Orders ({timeRange === 'week' ? 'This Week' : 'This Month'})
+              Total Orders ({timeRange === "week" ? "This Week" : "This Month"})
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="dashboard-stat-value">
-              {timeRange === 'week' ? '277' : '1,225'}
+              {data?.metrics.totalOrders || 0}
             </div>
             <div className="flex items-center text-xs text-green-600 font-medium">
               <TrendingUp className="mr-1 h-3 w-3" />
@@ -160,7 +239,7 @@ const Analytics = () => {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="dashboard-stat">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -168,22 +247,26 @@ const Analytics = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="dashboard-stat-value">$20.25</div>
+            <div className="dashboard-stat-value">
+              ${(data?.metrics.avgOrderValue || 0).toFixed(2)}
+            </div>
             <div className="flex items-center text-xs text-green-600 font-medium">
               <TrendingUp className="mr-1 h-3 w-3" />
               <span>+2% from previous {timeRange}</span>
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="dashboard-stat">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Repeat Customers
+              Unique Customers
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="dashboard-stat-value">68%</div>
+            <div className="dashboard-stat-value">
+              {data?.metrics.customerCount || 0}
+            </div>
             <div className="flex items-center text-xs text-green-600 font-medium">
               <TrendingUp className="mr-1 h-3 w-3" />
               <span>+5% from previous {timeRange}</span>
@@ -201,7 +284,11 @@ const Analytics = () => {
         description="Track your restaurant's performance"
       />
 
-      <Tabs defaultValue="week" className="mb-6" onValueChange={setTimeRange}>
+      <Tabs
+        defaultValue="week"
+        className="mb-6"
+        onValueChange={(value) => setTimeRange(value as "week" | "month")}
+      >
         <TabsList>
           <TabsTrigger value="week">This Week</TabsTrigger>
           <TabsTrigger value="month">This Month</TabsTrigger>
@@ -215,26 +302,29 @@ const Analytics = () => {
           <CardHeader>
             <CardTitle>Revenue Overview</CardTitle>
             <CardDescription>
-              {timeRange === 'week' ? 'Daily revenue for the current week' : 'Monthly revenue for the current year'}
+              {timeRange === "week"
+                ? "Daily revenue for the current week"
+                : "Daily revenue for the current month"}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              {loading ? (
-                <div className="w-full h-full flex items-center justify-center">
+              {isLoading ? (
+                <div className="w-full h-full flex items-center justify-center bg-gray-100 rounded">
                   <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={timeRange === 'week' ? weekdayRevenueData : monthlyRevenueData}>
+                  <BarChart data={revenueData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip 
-                      formatter={(value) => [`$${value}`, 'Revenue']}
-                      labelFormatter={(label) => `${label}`}
+                    <Tooltip formatter={(value) => [`$${value}`, "Revenue"]} />
+                    <Bar
+                      dataKey="revenue"
+                      fill="#5DAA80"
+                      radius={[4, 4, 0, 0]}
                     />
-                    <Bar dataKey="revenue" fill="#5DAA80" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -246,29 +336,28 @@ const Analytics = () => {
           <CardHeader>
             <CardTitle>Order Volume</CardTitle>
             <CardDescription>
-              {timeRange === 'week' ? 'Daily orders for the current week' : 'Monthly orders for the current year'}
+              {timeRange === "week"
+                ? "Daily orders for the current week"
+                : "Daily orders for the current month"}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              {loading ? (
-                <div className="w-full h-full flex items-center justify-center">
+              {isLoading ? (
+                <div className="w-full h-full flex items-center justify-center bg-gray-100 rounded">
                   <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={timeRange === 'week' ? weekdayOrdersData : monthlyOrdersData}>
+                  <LineChart data={ordersData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip 
-                      formatter={(value) => [value, 'Orders']}
-                      labelFormatter={(label) => `${label}`}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="orders" 
-                      stroke="#F15D36" 
+                    <Tooltip formatter={(value) => [value, "Orders"]} />
+                    <Line
+                      type="monotone"
+                      dataKey="orders"
+                      stroke="#F15D36"
                       strokeWidth={2}
                       dot={{ r: 4 }}
                       activeDot={{ r: 6 }}
@@ -289,21 +378,22 @@ const Analytics = () => {
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              {loading ? (
-                <div className="w-full h-full flex items-center justify-center">
+              {isLoading ? (
+                <div className="w-full h-full flex items-center justify-center bg-gray-100 rounded">
                   <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={hourlyOrdersData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="hour" />
+                    <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip 
-                      formatter={(value) => [value, 'Orders']}
-                      labelFormatter={(label) => `${label}`}
+                    <Tooltip formatter={(value) => [value, "Orders"]} />
+                    <Bar
+                      dataKey="orders"
+                      fill="#FAC849"
+                      radius={[4, 4, 0, 0]}
                     />
-                    <Bar dataKey="orders" fill="#FAC849" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -318,8 +408,8 @@ const Analytics = () => {
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              {loading ? (
-                <div className="w-full h-full flex items-center justify-center">
+              {isLoading ? (
+                <div className="w-full h-full flex items-center justify-center bg-gray-100 rounded">
                   <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                 </div>
               ) : (
@@ -333,13 +423,18 @@ const Analytics = () => {
                       outerRadius={90}
                       paddingAngle={2}
                       dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }) =>
+                        `${name} ${(percent * 100).toFixed(0)}%`
+                      }
                     >
                       {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                        />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => [`${value}%`, 'Percentage']} />
+                    <Tooltip formatter={(value) => [`${value}`, "Orders"]} />
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
@@ -352,13 +447,18 @@ const Analytics = () => {
       <Card>
         <CardHeader>
           <CardTitle>Top Selling Items</CardTitle>
-          <CardDescription>Most popular menu items for the {timeRange}</CardDescription>
+          <CardDescription>
+            Most popular menu items for the {timeRange}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {isLoading ? (
             <div className="space-y-4">
               {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="flex items-center justify-between py-2 animate-pulse">
+                <div
+                  key={i}
+                  className="flex items-center justify-between py-2 animate-pulse"
+                >
                   <div className="w-48 h-5 bg-gray-200 rounded"></div>
                   <div className="flex items-center gap-4">
                     <div className="w-16 h-5 bg-gray-200 rounded"></div>
@@ -370,7 +470,10 @@ const Analytics = () => {
           ) : (
             <div className="space-y-1">
               {topSellingItems.map((item, index) => (
-                <div key={index} className="flex items-center justify-between py-2 border-b last:border-0">
+                <div
+                  key={index}
+                  className="flex items-center justify-between py-2 border-b last:border-0"
+                >
                   <div className="flex items-center gap-3">
                     <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-sm font-medium">
                       {index + 1}
@@ -379,7 +482,11 @@ const Analytics = () => {
                   </div>
                   <div className="flex items-center gap-4">
                     <span>{item.orders} orders</span>
-                    <div className={`flex items-center ${item.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <div
+                      className={`flex items-center ${
+                        item.change >= 0 ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
                       {item.change >= 0 ? (
                         <TrendingUp className="h-4 w-4 mr-1" />
                       ) : (
