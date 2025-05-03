@@ -391,7 +391,7 @@ const AddRestaurantModal = ({
                   Location (Search or click on the map to select)
                 </label>
                 <LoadScript
-                  googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
+                  googleMapsApiKey={'AIzaSyB0zc090Yi-GBjwOs7kG6iqVPR7XJPoDvo'}
                   libraries={["places"]}
                 >
                   <Autocomplete
