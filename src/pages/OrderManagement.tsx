@@ -222,7 +222,9 @@ const OrderManagement = () => {
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-lg">{order.id}</h3>
+                            <h3 className="font-semibold text-lg">
+                            {`OI-${order.id.slice(-5).toUpperCase()}`}
+                            </h3>
                           <Badge className={getStatusBadgeColor(order.status)}>
                             {order.status.charAt(0).toUpperCase() +
                               order.status.slice(1)}

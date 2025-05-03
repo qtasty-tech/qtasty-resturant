@@ -179,7 +179,7 @@ const Dashboard = () => {
       >
         <div className="flex justify-between items-start mb-2">
           <div>
-            <h4 className="font-medium">{order._id}</h4>
+            <h4 className="font-medium"> {`OI-${order._id.slice(-5).toUpperCase()}`}</h4>
             <p className="text-xs text-muted-foreground">
               {getTimeAgo(new Date(order.createdAt))}
             </p>
