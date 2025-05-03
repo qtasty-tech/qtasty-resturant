@@ -1,4 +1,3 @@
-// src/components/AddItemDialog.tsx
 import {
   Dialog,
   DialogContent,
@@ -12,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { useState } from "react";
 
 interface MenuItem {
   _id: string;
@@ -35,35 +35,8 @@ interface AddItemDialogProps {
     >
   ) => void;
   onPopularChange: (checked: boolean) => void;
-  onAddItem: () => void;
+  onAddItem: (imageFile?: File) => void;
 }
-
-const categories = [
-  "Appetizers",
-  "Main Course",
-  "Desserts",
-  "Beverages",
-  "Salads",
-  "Sides",
-  "Soups",
-  "Sandwiches",
-  "Pasta",
-  "Pizza",
-  "Seafood",
-  "Vegetarian",
-  "Vegan",
-  "Gluten-Free",
-  "Breakfast",
-  "Brunch",
-  "Snacks",
-  "Specials",
-  "Kids Menu",
-  "Healthy Options",
-  "Seasonal",
-  "Limited Time Offer",
-];
-
-
 
 const AddItemDialog: React.FC<AddItemDialogProps> = ({
   isOpen,
@@ -74,19 +47,41 @@ const AddItemDialog: React.FC<AddItemDialogProps> = ({
   onPopularChange,
   onAddItem,
 }) => {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    console.log("AddItemDialog - Selected file:", file);
+    if (file) {
+      setSelectedFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setSelectedFile(null);
+      setPreviewImage(null);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("AddItemDialog - Submitting with file:", selectedFile);
+    onAddItem(selectedFile || undefined);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Add New Menu Item</DialogTitle>
           <DialogDescription>
-            Add details about your new menu item below. Name, price and category are required.
+            Add details about your new menu item below. Name, price, and category are required.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={(e) => {
-          e.preventDefault();
-          onAddItem();
-        }}>
+        <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="name">Item Name *</Label>
@@ -121,7 +116,7 @@ const AddItemDialog: React.FC<AddItemDialogProps> = ({
                   type="number"
                   step="0.01"
                   min="0"
-                  value={newItem.price || ''}
+                  value={newItem.price || ""}
                   onChange={onInputChange}
                   placeholder="0.00"
                   required
@@ -160,23 +155,20 @@ const AddItemDialog: React.FC<AddItemDialogProps> = ({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="image">Image URL</Label>
+              <Label htmlFor="image">Item Image</Label>
               <Input
                 id="image"
                 name="image"
-                value={newItem.imageUrl}
-                onChange={onInputChange}
-                placeholder="https://example.com/image.jpg"
+                type="file"
+                accept="image/jpeg,image/jpg,image/png"
+                onChange={handleFileChange}
               />
-              {newItem.imageUrl && (
+              {previewImage && (
                 <div className="mt-2 rounded-md overflow-hidden border">
                   <img
-                    src={newItem.imageUrl}
+                    src={previewImage}
                     alt="Preview"
                     className="w-full h-32 object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/placeholder.svg';
-                    }}
                   />
                 </div>
               )}

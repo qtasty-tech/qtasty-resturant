@@ -9,7 +9,7 @@ const apiConfig = {
   createRestaurant: `${RESTAURANT_API_BASE}`,
   updateOrderstatus: `${ORDER_API_BASE}`,
   getRestaurantOrders: `${ORDER_API_BASE}/restaurant`,
-  getRestaurantMetrics: `${ORDER_API_BASE}/restaurant`, // New endpoint
+  getRestaurantMetrics: `${ORDER_API_BASE}/restaurant`,
 };
 
 export default apiConfig;

@@ -14,16 +14,19 @@ export const getMenu = async (restaurantId: string) => {
   return response.data;
 };
 
-export const createMenuItem = async (restaurantId: string, menuItem: any) => {
+export const createMenuItem = async (restaurantId: string, data: FormData) => {
   const token = localStorage.getItem("restaurantToken");
   const response = await axios.post(
     `${API_BASE_URL}/restaurants/${restaurantId}/menu`,
-    menuItem,
+    data,
     {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data",
+      },
     }
   );
-  return response.data;
+  return response.data.menuItem;
 };
 
 export const deleteMenuItem = async (
@@ -39,27 +42,25 @@ export const deleteMenuItem = async (
   );
 };
 
-// For general updates
 export const updateMenuItem = async (
   restaurantId: string,
   menuItemId: string,
-  updates: any
+  data: FormData
 ) => {
   const token = localStorage.getItem("restaurantToken");
   const response = await axios.put(
     `${API_BASE_URL}/restaurants/${restaurantId}/menu/${menuItemId}`,
-    updates,
+    data,
     {
       headers: {
         Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+        "Content-Type": "multipart/form-data",
       },
     }
   );
-  return response.data; 
+  return response.data.menuItem;
 };
 
-// For availability toggle
 export const toggleAvailability = async (
   restaurantId: string,
   menuItemId: string,
@@ -76,7 +77,6 @@ export const toggleAvailability = async (
   return response.data.menuItem;
 };
 
-// For popularity toggle
 export const toggleMenuItemPopularity = async (
   restaurantId: string,
   menuItemId: string,

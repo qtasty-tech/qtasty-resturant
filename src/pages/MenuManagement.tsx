@@ -1,4 +1,3 @@
-// src/pages/MenuManagement.tsx
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
@@ -155,10 +154,27 @@ const MenuManagement = () => {
     }
   };
 
-  const handleAddItem = async () => {
+  const handleAddItem = async (imageFile?: File) => {
     try {
-      setIsLoading(true); // Start loading animation
-      const createdItem = await createMenuItem(restaurantId!, newItem);
+      setIsLoading(true);
+      const formData = new FormData();
+      formData.append("name", newItem.name);
+      formData.append("description", newItem.description);
+      formData.append("price", newItem.price.toString());
+      formData.append("category", newItem.category);
+      formData.append("calories", newItem.calories);
+      formData.append("popular", newItem.popular.toString());
+      formData.append("available", newItem.available.toString());
+      if (imageFile) {
+        formData.append("image", imageFile);
+      }
+
+      console.log("handleAddItem - FormData contents:");
+      for (const pair of formData.entries()) {
+        console.log(`${pair[0]}: ${pair[1]}`);
+      }
+
+      const createdItem = await createMenuItem(restaurantId!, formData);
 
       let categoryExists = false;
       const updatedCategories = categories.map((category) => {
@@ -166,7 +182,11 @@ const MenuManagement = () => {
           categoryExists = true;
           return {
             ...category,
-            items: [...category.items, createdItem],
+            items: [...category.items, {
+              ...createdItem,
+              id: createdItem._id,
+              imageUrl: createdItem.image,
+            }],
           };
         }
         return category;
@@ -176,7 +196,11 @@ const MenuManagement = () => {
         updatedCategories.push({
           id: categories.length + 1,
           name: newItem.category,
-          items: [createdItem],
+          items: [{
+            ...createdItem,
+            id: createdItem._id,
+            imageUrl: createdItem.image,
+          }],
         });
       }
 
@@ -193,34 +217,62 @@ const MenuManagement = () => {
       });
       setIsAddDialogOpen(false);
 
-      const data = await getMenu(restaurantId!);
-      setCategories(data.categories);
-
       toast({
         title: "Success",
         description: `${newItem.name} has been added to your menu.`,
       });
     } catch (error) {
+      console.error("Error in handleAddItem:", error);
       toast({
         title: "Error",
         description: "Failed to add menu item",
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false); 
+      setIsLoading(false);
     }
   };
 
-  const handleUpdateItem = async () => {
+  const handleUpdateItem = async (imageFile?: File) => {
     if (!selectedItem) return;
 
     try {
-      await updateMenuItem(restaurantId!, selectedItem.id, selectedItem);
-
       setIsLoading(true);
-      const data = await getMenu(restaurantId!);
-      setCategories(data.categories);
-      setIsLoading(false);
+      const formData = new FormData();
+      formData.append("name", selectedItem.name);
+      formData.append("description", selectedItem.description);
+      formData.append("price", selectedItem.price.toString());
+      formData.append("category", selectedItem.category || "");
+      formData.append("calories", selectedItem.calories);
+      formData.append("popular", selectedItem.popular.toString());
+      formData.append("available", selectedItem.available.toString());
+      if (imageFile) {
+        formData.append("image", imageFile);
+      }
+
+      console.log("handleUpdateItem - FormData contents:");
+      for (const pair of formData.entries()) {
+        console.log(`${pair[0]}: ${pair[1]}`);
+      }
+
+      const updatedItem = await updateMenuItem(
+        restaurantId!,
+        selectedItem.id,
+        formData
+      );
+
+      setCategories((prevCategories) =>
+        prevCategories.map((category) => ({
+          ...category,
+          items: category.items.map((item) =>
+            item.id === selectedItem.id ? {
+              ...updatedItem,
+              id: updatedItem._id,
+              imageUrl: updatedItem.image,
+            } : item
+          ),
+        }))
+      );
 
       setSelectedItem(null);
       toast({
@@ -228,12 +280,14 @@ const MenuManagement = () => {
         description: `${selectedItem.name} has been updated.`,
       });
     } catch (error) {
-      setIsLoading(false);
+      console.error("Error in handleUpdateItem:", error);
       toast({
         title: "Error",
         description: "Failed to update menu item",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -287,32 +341,30 @@ const MenuManagement = () => {
         </Button>
       </PageHeader>
 
-      <Tabs 
-        defaultValue="All" 
+      <Tabs
+        defaultValue="All"
         className="mb-8"
         value={selectedCategory}
         onValueChange={setSelectedCategory}
       >
         <TabsList className="mb-4 flex flex-wrap">
           {availableCategories.map((category) => (
-            <TabsTrigger
-              key={category}
-              value={category}
-            >
+            <TabsTrigger key={category} value={category}>
               {category}
             </TabsTrigger>
           ))}
         </TabsList>
-        
+
         {availableCategories.map((category) => (
           <TabsContent key={category} value={category} className="mt-0">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {(category === "All" ? allItems : categories.find(c => c.name === category)?.items || []).map((item) => (
+              {(category === "All"
+                ? allItems
+                : categories.find((c) => c.name === category)?.items || []
+              ).map((item) => (
                 <Card
                   key={item.id}
-                  className={`overflow-hidden ${
-                    !item.available ? "opacity-70" : ""
-                  }`}
+                  className={`overflow-hidden ${!item.available ? "opacity-70" : ""}`}
                 >
                   <div className="relative h-48 w-full">
                     <img
@@ -389,13 +441,13 @@ const MenuManagement = () => {
               ))}
             </div>
 
-            {(category === "All" 
+            {(category === "All"
               ? allItems.length === 0
-              : categories.find(c => c.name === category)?.items.length === 0) && (
+              : categories.find((c) => c.name === category)?.items.length === 0) && (
               <div className="text-center py-12">
                 <h3 className="text-lg font-medium mb-2">No items found</h3>
                 <p className="text-muted-foreground mb-4">
-                  {category === "All" 
+                  {category === "All"
                     ? "Add your first menu item."
                     : `Add your first menu item in ${category} category.`}
                 </p>
