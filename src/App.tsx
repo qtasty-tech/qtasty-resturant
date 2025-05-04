@@ -7,7 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import MainLayout from "./components/layout/MainLayout";
 import Login from "./pages/Login";  
 import Register from "./pages/Register";  
-import VerificationPending from "./pages/auth/VerificationPending";
+import VerificationPending from "./pages/VerificationPending";
 import Dashboard from "./pages/Dashboard";
 import MenuManagement from "./pages/MenuManagement";
 import OrderManagement from "./pages/OrderManagement";
@@ -33,7 +33,7 @@ const App = () => (
           {/* Auth Routes */}
          <Route path="/" element={<Login />} />  
              <Route path="/auth/signup" element={<Register />} />  
-          <Route path="/auth/verification-pending" element={<VerificationPending />} />
+          
           
           <Route element={<ProtectedRoute />}>
             {/* Protected Routes */}
@@ -45,6 +45,7 @@ const App = () => (
             <Route path="/:id/finances" element={<MainLayout><Finances /></MainLayout>} />
             <Route path="/:id/settings" element={<MainLayout><Settings /></MainLayout>} />
             <Route path="/myrestaurants" element={<MyRestaurants />} />
+            <Route path="/auth/verification-pending" element={<VerificationPending />} />
             {/* Redirect to Dashboard for empty routes */}
             <Route path="/index" element={<Navigate to="/" replace />} />
           </Route>
